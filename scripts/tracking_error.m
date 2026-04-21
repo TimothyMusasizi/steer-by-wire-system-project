@@ -1,61 +1,65 @@
+% Script: tracking_error
+
 %% === USER PARAMETERS ===
-steering_ratio = 5000/389;   % <-- CHANGE THIS to your system value
+tracking_error_steering_ratio = 5000/389;   % <-- CHANGE THIS to your system value
 
 %% === LOAD DATA ===
 % Works for timeseries or struct format
 
 if isa(out.SW_angle_ws, 'timeseries')
-    t_ = out.SW_angle_ws.Time;
-    SW = out.SW_angle_ws.Data;
+    tracking_error_t = out.SW_angle_ws.Time;
+    tracking_error_SW = out.SW_angle_ws.Data;
 else
-    t_ = out.SW_angle_ws.time;
-    SW = out.SW_angle_ws.signals.values;
+    tracking_error_t = out.SW_angle_ws.time;
+    tracking_error_SW = out.SW_angle_ws.signals.values;
 end
 
 if isa(out.RW_angle_ws, 'timeseries')
-    RW = out.RW_angle_ws.Data;
+    tracking_error_RW = out.RW_angle_ws.Data;
 else
-    RW = out.RW_angle_ws.signals.values;
+    tracking_error_RW = out.RW_angle_ws.signals.values;
 end
 
 %% === EXPECTED OUTPUT ===
-RW_expected = SW / steering_ratio;
+tracking_error_RW_expected = tracking_error_SW / tracking_error_steering_ratio;
 
 %% === ERROR SIGNAL ===
-error1 = RW - RW_expected;
+tracking_error_error = tracking_error_RW - tracking_error_RW_expected;
 
 %% === METRICS ===
 
 % RMSE
-RMSE = sqrt(mean(error1.^2));
+tracking_error_RMSE = sqrt(mean(tracking_error_error.^2));
 
 % MAE
-MAE = mean(abs(error1));
+tracking_error_MAE = mean(abs(tracking_error_error));
 
 % Max Error
-MAX_ERROR = max(abs(error1));
+tracking_error_MAX_ERROR = max(abs(tracking_error_error));
 
 % Steady-State Error (last 5% of samples)
-n_sample = length(error1);
-steady_state_error = mean(error1(round(0.95*n_sample):end));
+tracking_error_n_sample = length(tracking_error_error);
+tracking_error_steady_state_error = mean( ...
+    tracking_error_error(round(0.95 * tracking_error_n_sample):end) );
 
 % Percentage RMSE (relative to signal magnitude)
-RMSE_percent = 100 * RMSE / max(abs(RW_expected));
+tracking_error_RMSE_percent = 100 * tracking_error_RMSE / ...
+    max(abs(tracking_error_RW_expected));
 
 %% === DISPLAY RESULTS ===
 fprintf('\n=== TRACKING PERFORMANCE METRICS ===\n');
-fprintf('RMSE              : %.6f\n', RMSE);
-fprintf('MAE               : %.6f\n', MAE);
-fprintf('Max Error         : %.6f\n', MAX_ERROR);
-fprintf('Steady-State Error: %.6f\n', steady_state_error);
-fprintf('RMSE (%%)          : %.2f %%\n', RMSE_percent);
+fprintf('RMSE              : %.6f\n', tracking_error_RMSE);
+fprintf('MAE               : %.6f\n', tracking_error_MAE);
+fprintf('Max Error         : %.6f\n', tracking_error_MAX_ERROR);
+fprintf('Steady-State Error: %.6f\n', tracking_error_steady_state_error);
+fprintf('RMSE (%%)          : %.2f %%\n', tracking_error_RMSE_percent);
 
 %% === PLOTS ===
 figure;
 
 subplot(2,1,1);
-plot(t_, RW_expected, 'LineWidth', 1.5); hold on;
-plot(t_, RW, '--', 'LineWidth', 1.5);
+plot(tracking_error_t, tracking_error_RW_expected, 'LineWidth', 1.5); hold on;
+plot(tracking_error_t, tracking_error_RW, '--', 'LineWidth', 1.5);
 grid on;
 legend('Expected RW Angle', 'Actual RW Angle');
 title('Angle Tracking');
@@ -63,7 +67,7 @@ xlabel('Time (s)');
 ylabel('Angle');
 
 subplot(2,1,2);
-plot(t_, error1, 'LineWidth', 1.5);
+plot(tracking_error_t, tracking_error_error, 'LineWidth', 1.5);
 grid on;
 title('Tracking Error');
 xlabel('Time (s)');

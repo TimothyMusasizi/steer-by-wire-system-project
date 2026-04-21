@@ -1,16 +1,19 @@
-R = 6;
-theta = linspace(0, pi/2, 100);
+% Script: path_90_deg
 
-x1 = linspace(0, 15, 50);
-y1 = zeros(size(x1));
+path_90_deg_R = 6;
+path_90_deg_theta = linspace(0, pi/2, 100);
 
-x2 = 15 + R*sin(theta);
-y2 = -R*(1 - cos(theta));
+path_90_deg_x1 = linspace(0, 15, 50);
+path_90_deg_y1 = zeros(size(path_90_deg_x1));
 
-y3 = linspace(y2(end), y2(end) - 15, 50);
-x3 = (15 + R) * ones(size(y3));
+path_90_deg_x2 = 15 + path_90_deg_R * sin(path_90_deg_theta);
+path_90_deg_y2 = -path_90_deg_R * (1 - cos(path_90_deg_theta));
 
-path_x = [x1 x2 x3];
-path_y = [y1 y2 y3];
+path_90_deg_y3 = linspace(path_90_deg_y2(end), path_90_deg_y2(end) - 15, 50);
+path_90_deg_x3 = (15 + path_90_deg_R) * ones(size(path_90_deg_y3));
 
-waypoints = [path_x(:), path_y(:)];
+path_90_deg_path_x = [path_90_deg_x1 path_90_deg_x2 path_90_deg_x3];
+path_90_deg_path_y = [path_90_deg_y1 path_90_deg_y2 path_90_deg_y3];
+
+% Keep this as requested
+waypoints = [path_90_deg_path_x(:), path_90_deg_path_y(:)];

@@ -1,26 +1,28 @@
+% Script: plot_path
+
 %% ===============================
 %  LOAD DATA
 % ================================
 
 % Extract vehicle data (timeseries → vectors)
-vx = squeeze(out.pos_X.Data);
-vy = squeeze(out.pos_Y.Data);
+plot_path_vx = squeeze(out.pos_X.Data);
+plot_path_vy = squeeze(out.pos_Y.Data);
+plot_path_t  = squeeze(out.pos_X.Time);   % 🔥 FIXED (was missing)
 
 % Waypoints (already defined in workspace)
-wx = waypoints(:,1);
-wy = waypoints(:,2);
+plot_path_wx = waypoints(:,1);
+plot_path_wy = waypoints(:,2);
 
 %% ===============================
 %  MAIN TRAJECTORY PLOT
 % ================================
 
 figure;
-plot(wx, wy, 'k--', 'LineWidth', 2); hold on;
-plot(vx, vy, 'b', 'LineWidth', 2);
+plot(plot_path_wx, plot_path_wy, 'k--', 'LineWidth', 2); hold on;
+plot(plot_path_vx, plot_path_vy, 'b', 'LineWidth', 2);
 
-% Start & End points
-scatter(wx(1), wy(1), 80, 'g', 'filled');
-scatter(wx(end), wy(end), 80, 'r', 'filled');
+scatter(plot_path_wx(1), plot_path_wy(1), 80, 'g', 'filled');
+scatter(plot_path_wx(end), plot_path_wy(end), 80, 'r', 'filled');
 
 legend('Reference Path', 'Vehicle Trajectory', 'Start', 'End');
 xlabel('X Position (m)');
@@ -34,16 +36,16 @@ set(gca, 'FontSize', 12);
 %  TRACKING ERROR (Closest Distance)
 % ================================
 
-error = zeros(length(vx),1);
+plot_path_error = zeros(length(plot_path_vx),1);
 
-for i = 1:length(vx)
-    dx = wx - vx(i);
-    dy = wy - vy(i);
-    error(i) = min(sqrt(dx.^2 + dy.^2));
+for plot_path_i = 1:length(plot_path_vx)
+    plot_path_dx = plot_path_wx - plot_path_vx(plot_path_i);
+    plot_path_dy = plot_path_wy - plot_path_vy(plot_path_i);
+    plot_path_error(plot_path_i) = min(sqrt(plot_path_dx.^2 + plot_path_dy.^2));
 end
 
 figure;
-plot(error, 'LineWidth', 2);
+plot(plot_path_error, 'LineWidth', 2);
 title('Tracking Error Over Time');
 xlabel('Time Step');
 ylabel('Error (m)');
@@ -54,10 +56,11 @@ grid on;
 % ================================
 
 figure;
-plot(wx, wy, 'k--', 'LineWidth', 2); hold on;
+plot(plot_path_wx, plot_path_wy, 'k--', 'LineWidth', 2); hold on;
 
-for i = 1:10:length(vx)
-    plot(vx(1:i), vy(1:i), 'b', 'LineWidth', 1.5);
+for plot_path_i = 1:10:length(plot_path_vx)
+    plot(plot_path_vx(1:plot_path_i), plot_path_vy(1:plot_path_i), ...
+        'b', 'LineWidth', 1.5);
     drawnow;
 end
 
@@ -71,41 +74,61 @@ grid on;
 %  ANIMATED VEHICLE (WITH HEADING)
 % ================================
 
-% OPTIONAL: Only if you have theta
 if exist('vehicle_theta', 'var')
     
-    theta = vehicle_theta.Data;
+    plot_path_theta = squeeze(vehicle_theta.Data);
     
+    % Dynamic scaling
+    plot_path_scale = max(range(plot_path_wx), range(plot_path_wy));
+    plot_path_L = 0.05 * plot_path_scale;
+
     figure;
-    
-    for i = 1:10:length(vx)
-        clf;
+
+    % Static path
+    plot(plot_path_wx, plot_path_wy, 'k--', 'LineWidth', 2); hold on;
+
+    % Graphics handles (FAST)
+    plot_path_h_traj = plot(NaN, NaN, 'b', 'LineWidth', 1.5);
+    plot_path_h_vehicle = fill(NaN, NaN, 'b', 'EdgeColor', 'k', 'LineWidth', 1.2);
+
+    axis equal;
+    grid on;
+
+    % 🔥 Fix axis once (no jitter, faster)
+    xlim([min(plot_path_wx)-5, max(plot_path_wx)+5]);
+    ylim([min(plot_path_wy)-5, max(plot_path_wy)+5]);
+
+    title('Vehicle Motion Animation');
+
+    for plot_path_i = 2:5:length(plot_path_vx)
+        tic;
         
-        % Plot path
-        plot(wx, wy, 'k--', 'LineWidth', 2); hold on;
+        plot_path_px = plot_path_vx(plot_path_i);
+        plot_path_py = plot_path_vy(plot_path_i);
+        plot_path_th = plot_path_theta(plot_path_i);
         
-        % Current position
-        px = vx(i);
-        py = vy(i);
-        th = theta(i);
+        % Update trajectory
+        set(plot_path_h_traj, ...
+            'XData', plot_path_vx(1:plot_path_i), ...
+            'YData', plot_path_vy(1:plot_path_i));
         
-        % Draw vehicle (triangle)
-        L = 1.5;
-        tri_x = px + L*[cos(th), cos(th+2.5), cos(th-2.5)];
-        tri_y = py + L*[sin(th), sin(th+2.5), sin(th-2.5)];
+        % Update vehicle triangle
+        plot_path_tri_x = plot_path_px + plot_path_L * ...
+            [cos(plot_path_th), cos(plot_path_th+2.5), cos(plot_path_th-2.5)];
         
-        fill(tri_x, tri_y, 'b');
+        plot_path_tri_y = plot_path_py + plot_path_L * ...
+            [sin(plot_path_th), sin(plot_path_th+2.5), sin(plot_path_th-2.5)];
         
-        % Draw trail
-        plot(vx(1:i), vy(1:i), 'b', 'LineWidth', 1.2);
+        set(plot_path_h_vehicle, ...
+            'XData', plot_path_tri_x, ...
+            'YData', plot_path_tri_y);
         
-        axis equal;
-        grid on;
-        xlim([min(wx)-5, max(wx)+5]);
-        ylim([min(wy)-5, max(wy)+5]);
+        drawnow limitrate;
         
-        title('Vehicle Motion Animation');
-        drawnow;
+        % Real-time sync
+        plot_path_speed = 20; %2x faster
+        plot_path_dt = plot_path_t(plot_path_i) - plot_path_t(plot_path_i-1);
+        pause(max(0, plot_path_dt/plot_path_speed - toc));
     end
 end
 
@@ -114,6 +137,6 @@ end
 % ================================
 
 fprintf('===== PERFORMANCE METRICS =====\n');
-fprintf('Max Error: %.4f m\n', max(error));
-fprintf('Mean Error: %.4f m\n', mean(error));
-fprintf('RMS Error: %.4f m\n', sqrt(mean(error.^2)));
+fprintf('Max Error: %.4f m\n', max(plot_path_error));
+fprintf('Mean Error: %.4f m\n', mean(plot_path_error));
+fprintf('RMS Error: %.4f m\n', sqrt(mean(plot_path_error.^2)));
